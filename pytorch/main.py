@@ -243,9 +243,10 @@ for iteration in range(1, opt.niter+1):
         # the first 64 samples from the mini-batch are saved.
         #vutils.save_image(real_cpu[0:64,:,:,:],
         #        '%s/real_samples_%03d_%04d.png' % (opt.imDir, epoch, i), nrow=8)
-        fake,_ = netG(noise)
+        fake = netG(noise)
         vutils.save_image(fake.data[0:64,:,:,:],
                 '%s/fake_samples_epoch_%03d.png' % (opt.imDir, iteration), nrow=8)
     if iteration % opt.save_step == 0:
         # do checkpointing
         torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.modelsDir, iteration))
+        torch.save(netD.state_dict(), '%s/netD_epoch_%d.pth' % (opt.modelsDir, iteration))
