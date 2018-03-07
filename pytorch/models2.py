@@ -119,8 +119,7 @@ class _netD_1(nn.Module):
             self.conv1 = nn.Conv2d(nc, ndf, 4, 2, 1, bias=False), # 5,3,1 for 96x96
 
         main = nn.Sequential(
-            #self.conv1,
-            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False), # 5,3,1 for 96x96
+            self.conv1,
             # input is (nc) x 96 x 96
             nn.LeakyReLU(0.2, inplace=True),
             # state size. (ndf) x 32 x 32
