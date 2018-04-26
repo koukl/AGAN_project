@@ -7,6 +7,7 @@ Let's say your dataset is in a folder called data. To run the code you need crea
 ### Running
 A sample run will be as follows. You can open up main.py to check out the options you can set. Ask me if you're unsure.
 > python main.py --outDir='out' --percent=0.5 --dataRoot='./dataRoot' --imageSize=128
+
 > python main.py --outDir='out' --min_samples=5 --save_type='minimum samples' --dataRoot='./dataRoot' --imageSize=128
 
 outDir refers to the directory you store your weights/output image
