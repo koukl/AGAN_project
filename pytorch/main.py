@@ -1,6 +1,6 @@
 from __future__ import print_function
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="0" #restrict to a single GPU
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 import time
 import random
 import argparse
@@ -44,6 +44,8 @@ parser.add_argument('--white_noise'  , type=int, default=1, help='Add white nois
 parser.add_argument('--lr_decay_every', type=int, default=3000, help='decay lr this many iterations')
 parser.add_argument('--save_step', type=int, default=10000, help='save weights every 50000 iterations ')
 parser.add_argument('--percent', type=float, default=.5)
+parser.add_argument('--min_samples', type=int, default=1)
+parser.add_argument('--save_type', default='percent', help='percent | minimum samples')
 
 
 opt = parser.parse_args()
@@ -86,6 +88,8 @@ ndf = opt.ndf
 n_extra_d = opt.n_extra_layers_d
 n_extra_g = opt.n_extra_layers_g
 percent = opt.percent
+min_samples = opt.min_samples
+save_type = opt.save_type
 history = torch.Tensor()
 
 dataset = dset.ImageFolder(
@@ -131,11 +135,13 @@ if opt.cuda:
     criterion.cuda()
     input, label, additive_noise = input.cuda(), label.cuda(), additive_noise.cuda()
     noise = noise.cuda()
+    history = history.cuda()
     
 input = Variable(input)
 label = Variable(label)
 additive_noise = Variable(additive_noise)
 noise = Variable(noise)
+history = Variable(history)
 
 # setup optimizer
 optimizerD = optim.Adam(netD.parameters(), lr = opt.lr, betas = (opt.beta1, 0.999))
@@ -176,23 +182,18 @@ for iteration in range(1, opt.niter+1):
     noise.data.normal_(0, 1)
     fake_o = netG(noise)
 
-    # save to history
-    if not history.size() or percent == 0:
-        history = fake_o
+    # add history to current generated batch
+    if history.size():
+        augment = torch.cat([history, fake_o])
     else:
-        # permute history
-        history = history[torch.randperm(history.size(0)).cuda()]
-        # save percentage
-        history = history[:int(percent * history.size(0)),:]
-        history = torch.cat([history, fake_o])
-
-    label.data.resize_(history.size(0)).fill_(fake_label) 
+        augment = fake_o
+    label.data.resize_(augment.size(0)).fill_(fake_label) 
 
     if opt.white_noise:
-        additive_noise.data.resize_(history.size()).normal_(0, 0.005)
-        fake = history + additive_noise
+        additive_noise.data.resize_(augment.size()).normal_(0, 0.005)
+        fake = augment + additive_noise
     else:
-        fake = history
+        fake = augment
 
     output = netD(fake.detach()) # add ".detach()" to avoid backprop through G
     output = torch.clamp(output, min=epsilon)
@@ -202,6 +203,27 @@ for iteration in range(1, opt.niter+1):
     errD = errD_real + errD_fake
 
     optimizerD.step() # .step() can be called once the gradients are computed
+
+    # save to history
+    if save_type == "percent": #use percent of previous batches
+        if percent == 0:
+            pass #history is still empty
+        else:
+            # permute history
+            history = augment[torch.randperm(augment.size(0)).cuda()]
+            # save percentage
+            history = history[:int(percent * history.size(0)), :]
+
+    else: #minimum number of samples per batch
+        if min_samples == 0:
+            pass
+        else:
+            if history.size():
+                history = torch.cat([history, fake_o[:int(min_samples), :]])
+            else:
+                history = fake_o[:int(min_samples), :]
+            history = history[torch.randperm(history.size(0)).cuda()]
+
 
     ############################
     # (2) Update G network: maximize log(D(G(z)))
