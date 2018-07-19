@@ -19,7 +19,7 @@ from chainer.training import extensions
 
 from net_mnist import Discriminator
 from net_mnist import Generator
-from updater import DCGANUpdater
+from updater import DirectedGANUpdater
 from visualize import out_generated_image
 
 
@@ -105,7 +105,7 @@ def main():
 
 
     # Set up a trainer
-    updater = DCGANUpdater(models=(gen, dis), iterator=train_iter, optimizer={'gen':opt_gen, 'dis':opt_dis}, device=args.gpu)
+    updater = DirectedGANUpdater(models=(gen, dis), iterator=train_iter, optimizer={'gen':opt_gen, 'dis':opt_dis}, device=args.gpu)
 
     #updater = training.updaters.StandardUpdater(train_iter, optimizer, device = args.gpu, loss_func = model.get_loss_func())
 
