@@ -29,11 +29,11 @@ StandardUpdaterクラスは
 
 # self.reconstruction_lossが必要かと思って追加したけど、意味はわかってないので微妙
 
-class DCGANUpdater(chainer.training.StandardUpdater):
+class DirectedGANUpdater(chainer.training.StandardUpdater):
     def __init__(self, *args, **kwargs):
         #self.reconstruction_loss,\
         self.gen, self.dis = kwargs.pop('models')
-        super(DCGANUpdater, self).__init__(*args, **kwargs)
+        super(DirectedGANUpdater, self).__init__(*args, **kwargs)
 
 
 
